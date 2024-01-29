@@ -34,9 +34,13 @@ const ratingSystem = async (req, res) => {
     const allRatings = findRatings.map((data) => Number(data.star));
     const sumRatings = allRatings.reduce((prev, curr) => prev + curr, 0);
     const finalRatings = Math.floor(sumRatings / allRatings.length);
+
+    const allStar = findRatings?.map((data) => Number(data?.star));
+    const sumStar = allStar?.reduce((prev, curr) => prev + curr, 0);
+    const finalStar = Math.floor(sumStar / allStar.length);
     await Products.findByIdAndUpdate(
       prodId,
-      { totalRatings: finalRatings },
+      { totalRatings: finalRatings, star: finalStar },
       { new: true }
     );
   } catch (error) {

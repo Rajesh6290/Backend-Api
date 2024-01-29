@@ -1,31 +1,13 @@
 import multer from "multer";
-import sharp from "sharp";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
-const multerStorage = multer.diskStorage({
-  destination: function (req, res, cb) {
-    cb(null, path.join(__dirname, "../public/images"));
-  },
-  filename: function (req, res, cb) {
-    const uniqueSuffix = Date.now() + "_" + Math.round(Math.random() * le9);
-    cb(null, file.fieldname + "_" + uniqueSuffix + ".jpeg");
-  },
+cloudinary.config({
+  cloud_name: "your_cloud_name",
+  api_key: "your_api_key",
+  api_secret: "your_api_secret",
 });
 
-const multerFilter = (req, res, cb) => {
-  if (file.mimetype.startswith("image")) {
-    cb(null, true);
-  } else {
-    cb(
-      {
-        msg: "Unsupported file format",
-      },
-      false
-    );
-  }
-};
-const uploadPhoto = multer({
-  storage: multerStorage,
-  fileFilter: multerFilter,
-  limits: { fieldSize: 20000000 },
-});
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+export default upload;

@@ -1,7 +1,9 @@
-import { Products } from "../models/product.models.js";
-import { query } from "express";
 import slugify from "slugify";
+import { Cart } from "../models/cart.models.js";
+import { Products } from "../models/product.models.js";
 import { Users } from "../models/user.models.js";
+import { WishList } from "../models/wishlist.models.js";
+import { Ratings } from "../models/rating.models.js";
 const createProduct = async (req, res) => {
   try {
     if (req.body.title) {
@@ -37,7 +39,11 @@ const getAllProduct = async (req, res) => {
     const pageNumber = parseInt(req.query.pageNumber);
     const limit = parseInt(req.query.limit);
     const skip = (pageNumber - 1) * limit;
-    const products = await Products.find().skip(skip).limit(limit);
+    const products = await Products.find()
+      .skip(skip)
+      .limit(limit)
+      .populate("category", "name") // Populate the 'category' field with the 'name' property
+      .populate("brand", "name");
     if (!products) {
       res.json({ msg: "No users found" });
     } else {
@@ -57,8 +63,31 @@ const getAllProduct = async (req, res) => {
 const getProduct = async (req, res) => {
   const { id } = req.params;
   try {
-    const allProducts = await Products.findById(id);
-    res.json(allProducts);
+    const data = await Products.findById(id)
+      .populate("category", "name")
+      .populate("brand", "name");
+    const ratings = await Ratings.find({ product: id }).populate(
+      "user",
+      "name email"
+    );
+    const userInformation = ratings.map((rating) => ({
+      userId: rating.user._id,
+      userName: rating.user.name,
+      userEmail: rating.user.email,
+      star: rating.star,
+      // ... other properties from the 'rating' object
+    }));
+    const totalStar = ratings?.map((data) => Number(data?.star));
+    const sumOfStar = totalStar?.reduce((prev, sum) => prev + sum, 0);
+    const finalStar = sumOfStar / totalStar.length;
+
+    res.json({
+      data,
+      ratings: {
+        star: userInformation,
+      },
+      totalStar: finalStar,
+    });
   } catch (error) {
     res.json({ msg: error.message });
   }
@@ -67,6 +96,9 @@ const deleteProduct = async (req, res) => {
   const { id } = req.params;
   try {
     const productDelete = await Products.findOneAndDelete(id);
+    await Cart.findOneAndDelete({ product: id });
+    await WishList.findOneAndDelete({ product: id });
+
     res.json(productDelete);
   } catch (error) {
     res.json({ msg: error.message });
@@ -104,65 +136,12 @@ const addToWishlist = async (req, res) => {
     res.json({ msg: error.message });
   }
 };
-const giveRating = async (req, res) => {
-  try {
-    const { _id } = req.body;
-    const user = await Users.findById(_id);
-    console.log({ user });
-    const { star, prodId } = req.body;
-    const product = await Products.findById(prodId);
-    let productAlreadyRated = product.ratings.find(
-      (usersIds) => usersIds?.postedBy?.toString() === _id.toString()
-    );
-    if (productAlreadyRated) {
-      const updateRating = await Products.updateOne(
-        {
-          ratings: { $eleMatch: productAlreadyRated },
-        },
-        {
-          $set: { "ratings.$.star": star },
-        },
-        { new: true }
-      );
-      res.json({ updateRating });
-    } else {
-      const rateProduct = await Products.findByIdAndUpdate(
-        prodId,
-        {
-          $push: {
-            ratings: {
-              star: star,
-              postedBy: _id,
-            },
-          },
-        },
-        { new: true }
-      );
-    }
-    const getTotalRatings = await Products.findById(prodId);
-    const totalRatings = getTotalRatings.ratings.length;
-    const ratingSum = getTotalRatings.ratings
-      .map((item) => item.star)
-      .reduce((prev, curr) => prev + curr, 0);
-    let actualRatings = Math.round(ratingSum / totalRatings);
-    let finalProduct = await Products.findByIdAndUpdate(
-      prodId,
-      {
-        totalRatings: actualRatings,
-      },
-      { new: true }
-    );
-    res.json({ finalProduct });
-  } catch (error) {
-    res.json({ msg: error.message });
-  }
-};
+
 export {
-  createProduct,
   UpdateProduct,
+  addToWishlist,
+  createProduct,
+  deleteProduct,
   getAllProduct,
   getProduct,
-  deleteProduct,
-  addToWishlist,
-  giveRating,
 };

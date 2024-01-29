@@ -18,9 +18,10 @@ import {
   isAdmin,
   loginAccess,
 } from "../middleware/jwt.verifyToken.js";
+import upload from "../middleware/upload.image.js";
 const router = express.Router();
 
-router.post("/", createUser);
+router.post("/", upload.array("images", 3), createUser);
 router.post("/login", loginUser);
 router.get("/", verifyToken, isAdmin, getAllUser);
 router.get("/current", verifyToken, getSelfData);

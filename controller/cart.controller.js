@@ -29,7 +29,6 @@ const addToCart = async (req, res) => {
 const removeCart = async (req, res) => {
   const { _id } = req.user;
   const { prodId } = req.params;
-  console.log("product id", prodId);
   try {
     const result = await Cart.findOneAndDelete({ user: _id, product: prodId });
     res.json(result);
@@ -43,12 +42,17 @@ const getAllProductInCart = async (req, res) => {
     const cartItems = await Cart.find({ user: _id }).populate({
       path: "product",
       model: "Products",
+      populate: [
+        { path: "category", model: "Category", select: "name" },
+        { path: "brand", model: "Brands", select: "name" },
+      ],
     });
     const products = cartItems.map((product) => {
       const productData = product.product;
       const productQuantity = product.quantity;
       const amount = productQuantity * productData.price;
       const finalProduct = productData.toObject();
+
       return {
         finalProduct,
         amount,

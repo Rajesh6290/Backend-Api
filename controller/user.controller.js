@@ -7,18 +7,19 @@ import { sendMail } from "./email.controller.js";
 import { Address } from "../models/address.models.js";
 import { WishList } from "../models/wishlist.models.js";
 import { Cart } from "../models/cart.models.js";
-const createUser = async (req, res, next) => {
-  const email = req.body.email;
-  const findUser = await Users.findOne({ email: email });
 
-  if (!findUser) {
-    const newUser = await Users.create(req.body);
-    res.json(newUser);
-  } else {
-    res.json({
-      msg: "User already exists",
-      status: true,
-    });
+const createUser = async (req, res, next) => {
+  try {
+    const email = req.body.email;
+    const findUser = await Users.findOne({ email: email });
+    if (findUser) {
+      res.status(500).json({ msg: "User Already Registered" });
+    } else {
+      const user = await Users.create(req.body);
+      res.status(200).json(user);
+    }
+  } catch (error) {
+    next(error);
   }
 };
 

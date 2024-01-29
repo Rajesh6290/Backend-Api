@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 // Declare the Schema of the Mongo model
-var productSchema = new mongoose.Schema(
+const productSchema = new mongoose.Schema(
   {
     title: {
       type: "string",
@@ -21,29 +21,27 @@ var productSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    // category: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: "Category",
-    // },
     category: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Category",
       required: true,
     },
-    // brand: {
-    //   type: String,
-    //   enum: ["Apple", "Samsung", "Google"],
-    // },
+
     brand: {
-      type: String,
+      type: Schema.Types.ObjectId,
+      ref: "Brands",
       required: true,
     },
-    quantity: {
+
+    stock: {
       type: Number,
+      required: true,
       required: true,
     },
     images: {
       type: Array,
       default: [],
+      required: true,
     },
 
     color: {
@@ -51,7 +49,11 @@ var productSchema = new mongoose.Schema(
       required: true,
     },
     sold: {
-      type: Number,
+      type: Boolean,
+      default: false,
+    },
+    star: {
+      type: String,
       default: 0,
     },
     totalRatings: {
